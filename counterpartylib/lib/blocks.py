@@ -774,6 +774,10 @@ def decode_checksig(asm, ctx):
     return destination, data
 
 def decode_scripthash(asm):
+    if not (type(asm[1]) is bytes):
+        if type(asm[1]) is int:
+            asm[1] = asm[1].to_bytes(1, "big")
+
     destination = script.base58_check_encode(binascii.hexlify(asm[1]).decode('utf-8'), config.P2SH_ADDRESSVERSION)
 
     return destination, None
