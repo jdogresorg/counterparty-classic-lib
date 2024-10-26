@@ -1,5 +1,5 @@
 # Description
-`counterparty-classic-lib` is the reference implementation of the [Counterparty Protocol](https://counterparty.io).
+`counterparty-classic-lib` is the `classic` reference implementation of the [Counterparty Protocol](https://counterparty.io).
 
 **Note:** for the command-line interface to `counterparty-classic-lib`, see [`counterparty-classic-cli`](https://github.com/jdogresorg/counterparty-classic-cli).
 
