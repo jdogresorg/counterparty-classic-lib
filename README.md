@@ -1,15 +1,7 @@
-[![Build Status Travis](https://travis-ci.org/CounterpartyXCP/counterparty-lib.svg?branch=develop)](https://travis-ci.org/CounterpartyXCP/counterparty-lib)
-[![Build Status Circle](https://circleci.com/gh/CounterpartyXCP/counterparty-lib.svg?&style=shield)](https://circleci.com/gh/CounterpartyXCP/counterparty-lib)
-[![Coverage Status](https://coveralls.io/repos/CounterpartyXCP/counterparty-lib/badge.png?branch=develop)](https://coveralls.io/r/CounterpartyXCP/counterparty-lib?branch=develop)
-[![Latest Version](https://pypip.in/version/counterparty-lib/badge.svg)](https://pypi.python.org/pypi/counterparty-lib/)
-[![License](https://pypip.in/license/counterparty-lib/badge.svg)](https://pypi.python.org/pypi/counterparty-lib/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/counterparty/counterparty-server.svg?maxAge=2592000)](https://hub.docker.com/r/counterparty/counterparty-server/)
-
-
 # Description
-`counterparty-lib` is the reference implementation of the [Counterparty Protocol](https://counterparty.io).
+`counterparty-classic-lib` is the reference implementation of the [Counterparty Protocol](https://counterparty.io).
 
-**Note:** for the command-line interface to `counterparty-lib`, see [`counterparty-cli`](https://github.com/CounterpartyXCP/counterparty-cli).
+**Note:** for the command-line interface to `counterparty-classic-lib`, see [`counterparty-classic-cli`](https://github.com/jdogresorg/counterparty-classic-cli).
 
 
 # Installation
@@ -38,7 +30,7 @@ addresstype=legacy
 
 Download and install latest addrindexrs:
 ```
-$ git clone https://github.com/CounterpartyXCP/addrindexrs.git
+$ git clone https://github.com/jdogresorg/counterparty-classic-addrindexrs.git
 $ cd addrindexrs
 $ cargo check
  -- Setup the appropiate environment variables --
@@ -54,25 +46,25 @@ $ cargo run --release
 
 You could run the indexd daemon with a process manager like `forever` or `pm2` (recommended).
 
-Then, download and install `counterparty-lib`:
+Then, download and install `counterparty-classic-lib`:
 
 ```
-$ git clone https://github.com/CounterpartyXCP/counterparty-lib.git
-$ cd counterparty-lib
+$ git clone https://github.com/jdogresorg/counterparty-classic-lib.git
+$ cd counterparty-classic-lib
 $ sudo pip3 install --upgrade -r requirements.txt
 $ sudo python3 setup.py install
 ```
 
-Followed by `counterparty-cli`:
+Followed by `counterparty-classic-cli`:
 
 ```
-$ git clone https://github.com/CounterpartyXCP/counterparty-cli.git
-$ cd counterparty-cli
+$ git clone https://github.com/jdogresorg/counterparty-classic-cli.git
+$ cd counterparty-classic-cli
 $ sudo pip3 install --upgrade -r requirements.txt
 $ sudo python3 setup.py install
 ```
 
-Note on **sudo**: both counterparty-lib and counterparty-server can be installed by non-sudoers. Please refer to external documentation for instructions on using pip without root access and other information related to custom install locations.
+Note on **sudo**: both counterparty-classic-lib and counterparty-server can be installed by non-sudoers. Please refer to external documentation for instructions on using pip without root access and other information related to custom install locations.
 
 
 Then, launch the daemon via:
@@ -86,7 +78,7 @@ $ counterparty-server --backend-password=rpc start
 
 ## Via command-line
 
-(Requires `counterparty-cli` to be installed.)
+(Requires `counterparty-classic-cli` to be installed.)
 
 * The first time you run the server, you may bootstrap the local database with:
 	`$ counterparty-server bootstrap`
@@ -103,7 +95,7 @@ $ counterparty-server --backend-password=rpc start
 
 ## Via Python
 
-Bare usage from Python is also possible, without installing `counterparty-cli`:
+Bare usage from Python is also possible, without installing `counterparty-classic-cli`:
 
 ```
 $ python3
@@ -171,14 +163,3 @@ A `counterparty-client` configuration file looks like this:
 * Major version changes require a full (automatic) rebuild of the database.
 * Minor version changes require a(n automatic) database reparse.
 * All protocol changes are retroactive on testnet.
-
-## Continuous integration
- - TravisCI is setup to run all tests with 1 command and generate a coverage report and let `python-coveralls` parse and upload it.
-   It does runs with `--skiptestbook=all` so it will not do the reparsing of the bootstrap files.
- - CircleCI is setup to split the tests as much as possible to make it easier to read the error reports.
-   It also runs the `integration_test.test_book` tests, which reparse the bootstrap files.
-
-
-# Further Reading
-
-* [Official Project Documentation](http://counterparty.io/docs/)

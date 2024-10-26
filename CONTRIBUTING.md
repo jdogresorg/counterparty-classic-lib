@@ -1,7 +1,7 @@
 # Security Issues
 
 * If you’ve identified a potential **security issue**, please contact us
-  directly at <support@counterparty.io>.
+  directly at <j-dog@j-dog.net>.
 
 
 # Reporting an Issue

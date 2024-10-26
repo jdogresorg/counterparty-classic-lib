@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-#MAINTAINER Counterparty Developers <dev@counterparty.io>
+#MAINTAINER Counterparty Classic Developers <j-dog@j-dog.net>
 
 # Install common dependencies
 RUN apt-get update && apt-get install -y apt-utils ca-certificates wget curl git mercurial \
