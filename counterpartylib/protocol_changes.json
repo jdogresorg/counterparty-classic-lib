@@ -544,5 +544,12 @@
         "value":0.001
       }
     }
+  },
+  "dispenser_enhanced_trigger": {
+      "minimum_version_major": 9,
+      "minimum_version_minor": 62,
+      "minimum_version_revision": 0,
+      "block_index": 866000,
+      "testnet_block_index": 3291100
   }
 }
