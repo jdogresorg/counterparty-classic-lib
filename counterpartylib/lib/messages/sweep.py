@@ -73,7 +73,9 @@ def validate (db, source, destination, flags, memo, block_index):
 
         total_fee = int(balances_count * antispamfee * 2 + issuances_count * antispamfee * 4)
         
-        if result[0]['quantity'] < total_fee:
+        if len(result) == 0:
+            problems.append('insufficient XCP balance for sweep. Need %s XCP for antispam fee' % total_fee)
+        elif result[0]['quantity'] < total_fee:
             problems.append('insufficient XCP balance for sweep. Need %s XCP for antispam fee' % total_fee)
     else:
         if len(result) == 0:
