@@ -625,6 +625,8 @@ def get_tx_info1(tx_hex, block_index, block_parser=None):
     """
     ctx = backend.deserialize(tx_hex)
 
+    magic_word_prefix = bytes(util.get_value_by_block_index("magic_word_prefix", block_index),"utf-8")
+
     def get_pubkeyhash(scriptpubkey):
         asm = script.get_asm(scriptpubkey)
         if len(asm) != 5 or asm[0] != 'OP_DUP' or asm[1] != 'OP_HASH160' or asm[3] != 'OP_EQUALVERIFY' or asm[4] != 'OP_CHECKSIG':
@@ -676,12 +678,12 @@ def get_tx_info1(tx_hex, block_index, block_parser=None):
                 raise DecodeError('coinbase transaction')
             obj1 = arc4.init_arc4(ctx.vin[0].prevout.hash[::-1])
             data_pubkey = obj1.decrypt(pubkeyhash)
-            if data_pubkey[1:9] == config.PREFIX or pubkeyhash_encoding:
+            if data_pubkey[1:len(magic_word_prefix)+1] == magic_word_prefix or pubkeyhash_encoding:
                 pubkeyhash_encoding = True
                 data_chunk_length = data_pubkey[0]  # No ord() necessary.
                 data_chunk = data_pubkey[1:data_chunk_length + 1]
-                if data_chunk[-8:] == config.PREFIX:
-                    data += data_chunk[:-8]
+                if data_chunk[-len(magic_word_prefix):] == magic_word_prefix:
+                    data += data_chunk[:-len(magic_word_prefix)]
                     break
                 else:
                     data += data_chunk
@@ -696,8 +698,8 @@ def get_tx_info1(tx_hex, block_index, block_parser=None):
     # Check for, and strip away, prefix (except for burns).
     if destination == config.UNSPENDABLE:
         pass
-    elif data[:len(config.PREFIX)] == config.PREFIX:
-        data = data[len(config.PREFIX):]
+    elif data[:len(magic_word_prefix)] == magic_word_prefix:
+        data = data[len(magic_word_prefix):]
     else:
         raise DecodeError('no prefix')
 
@@ -752,8 +754,9 @@ def get_opreturn(asm):
 def decode_opreturn(asm, ctx):
     chunk = get_opreturn(asm)
     chunk = arc4_decrypt(chunk, ctx)
-    if chunk[:len(config.PREFIX)] == config.PREFIX:             # Data
-        destination, data = None, chunk[len(config.PREFIX):]
+    magic_word_prefix = util.get_value_by_block_index("magic_word_prefix").encode()
+    if chunk[:len(magic_word_prefix)] == magic_word_prefix: # Data
+        destination, data = None, chunk[len(magic_word_prefix):]
     else:
         raise DecodeError('unrecognised OP_RETURN output')
 
@@ -762,11 +765,12 @@ def decode_opreturn(asm, ctx):
 def decode_checksig(asm, ctx):
     pubkeyhash = script.get_checksig(asm)
     chunk = arc4_decrypt(pubkeyhash, ctx)
-    if chunk[1:len(config.PREFIX) + 1] == config.PREFIX:        # Data
+    magic_word_prefix = util.get_value_by_block_index("magic_word_prefix").encode()
+    if chunk[1:len(magic_word_prefix) + 1] == magic_word_prefix:        # Data
         # Padding byte in each output (instead of just in the last one) so that encoding methods may be mixed. Also, it’s just not very much data.
         chunk_length = chunk[0]
         chunk = chunk[1:chunk_length + 1]
-        destination, data = None, chunk[len(config.PREFIX):]
+        destination, data = None, chunk[len(magic_word_prefix):]
     else:                                                       # Destination
         pubkeyhash = binascii.hexlify(pubkeyhash).decode('utf-8')
         destination, data = script.base58_check_encode(pubkeyhash, config.ADDRESSVERSION), None
@@ -785,14 +789,15 @@ def decode_scripthash(asm):
 def decode_checkmultisig(asm, ctx):
     pubkeys, signatures_required = script.get_checkmultisig(asm)
     chunk = b''
+    magic_word_prefix = util.get_value_by_block_index("magic_word_prefix").encode()
     for pubkey in pubkeys[:-1]:     # (No data in last pubkey.)
         chunk += pubkey[1:-1]       # Skip sign byte and nonce byte.
     chunk = arc4_decrypt(chunk, ctx)
-    if chunk[1:len(config.PREFIX) + 1] == config.PREFIX:        # Data
+    if chunk[1:len(magic_word_prefix) + 1] == magic_word_prefix:        # Data
         # Padding byte in each output (instead of just in the last one) so that encoding methods may be mixed. Also, it’s just not very much data.
         chunk_length = chunk[0]
         chunk = chunk[1:chunk_length + 1]
-        destination, data = None, chunk[len(config.PREFIX):]
+        destination, data = None, chunk[len(magic_word_prefix):]
     else:                                                       # Destination
         pubkeyhashes = [script.pubkey_to_pubkeyhash(pubkey) for pubkey in pubkeys]
         destination, data = script.construct_array(signatures_required, pubkeyhashes, len(pubkeyhashes)), None

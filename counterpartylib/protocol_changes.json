@@ -544,5 +544,23 @@
         "value":0.001
       }
     }
+  },
+  "magic_word_prefix": {
+    "mainnet": {
+      "1": {
+        "value": "CNTRPRTY"
+      },
+      "866000": {
+        "value": "XCP"
+      }
+    },
+    "testnet": {
+      "1": {
+        "value": "XX"
+      },
+      "3430000": {
+        "value": "XX"
+      }
+    }
   }
 }
