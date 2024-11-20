@@ -480,9 +480,16 @@ def initialise(db):
 def get_tx_info(tx_hex, block_parser=None, block_index=None, db=None):
     """Get the transaction info. Returns normalized None data for DecodeError and BTCOnlyError."""
     try:
-        return _get_tx_info(tx_hex, block_parser, block_index)
+        if util.enabled("dispenser_enhanced_trigger", block_index):
+            tx_info = _get_tx_info(tx_hex, block_parser, block_index)
+            return tx_info[0], tx_info[1], tx_info[2], tx_info[3], tx_info[4], _get_swap_tx(backend.deserialize(tx_hex), block_parser, block_index, db=db)
+        else:
+            return _get_tx_info(tx_hex, block_parser, block_index)
     except DecodeError as e:
-        return b'', None, None, None, None, None
+        if util.enabled("dispenser_enhanced_trigger", block_index) and (e.args[0] != "coinbase transaction"):
+            return b'', None, None, None, None, _get_swap_tx(backend.deserialize(tx_hex), block_parser, block_index, db=db)
+        else:
+            return b'', None, None, None, None, None
     except BTCOnlyError as e:
         # NOTE: For debugging, logger.debug('Could not decode: ' + str(e))
         if util.enabled('dispensers', block_index):
@@ -549,10 +556,12 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
             elif asm[0] == 'OP_HASH160' and asm[-1] == 'OP_EQUAL' and len(asm) == 3:
                 destination, new_data = decode_scripthash(asm)
             elif asm[0] == 'OP_RETURN':
-                pass #Just ignore.
+                continue #Just ignore.
             elif util.enabled('segwit_support') and asm[0] == 0:
                 # Segwit output
                 destination, new_data = decode_p2w(vout.scriptPubKey)
+            elif asm[0] == 1:
+                continue #Taproot support not available yet
             else:
                 logger.error('unrecognised scriptPubkey. Just ignore this: ' + str(asm))
 
@@ -1145,16 +1154,20 @@ def list_tx(db, block_hash, block_index, block_time, tx_hash, tx_index, tx_hex=N
 
     outs = []
     first_one = True #This is for backward compatibility with unique dispensers
-    if not source and decoded_tx and util.enabled('dispensers', block_index):
+    if ((not source) or util.enabled("dispenser_enhanced_trigger", block_index)) and decoded_tx and util.enabled('dispensers', block_index):
         outputs = decoded_tx[1]
         out_index = 0
         for out in outputs:
             if out[0] != decoded_tx[0][0] and dispenser.is_dispensable(db, out[0], out[1]):
                 
-                source = decoded_tx[0][0]
-                destination = out[0]
-                btc_amount = out[1]
-                fee = 0
+                if not source:
+                    source = decoded_tx[0][0]
+                if destination is None:
+                    destination = out[0]
+                if btc_amount is None:  
+                    btc_amount = out[1]
+                if fee is None: 
+                    fee = 0
                 data = struct.pack(config.SHORT_TXTYPE_FORMAT, dispenser.DISPENSE_ID)
                 data += b'\x00'
                 

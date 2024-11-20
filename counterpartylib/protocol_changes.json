@@ -435,11 +435,28 @@
       "testnet_block_index": 2505725
   },
   "dispenser_origin_permission_extended": {
-      "minimum_version_major": 9,
-      "minimum_version_minor": 59,
-      "minimum_version_revision": 6,
-      "block_index": 819300,
-      "testnet_block_index": 2499850
+    "mainnet":{
+      "1":{
+        "value":false
+      },
+      "819300":{
+        "value":true
+      },
+      "825096":{
+        "value":false
+      },
+      "825097":{
+        "value":true
+      }
+    },
+    "testnet":{
+      "1":{
+        "value":false
+      },
+      "2499850":{
+        "value":true
+      }
+    }
   },
   "multiple_dispenses": {
       "minimum_version_major": 9,
@@ -562,5 +579,12 @@
         "value": "XX"
       }
     }
+  },
+  "dispenser_enhanced_trigger": {
+      "minimum_version_major": 9,
+      "minimum_version_minor": 62,
+      "minimum_version_revision": 0,
+      "block_index": 866000,
+      "testnet_block_index": 3291100
   }
 }

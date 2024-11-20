@@ -249,7 +249,7 @@ def log (db, command, category, bindings):
                 else:    
                     operator_string = "operator marked the dispenser to close it"
             
-                if util.enabled("dispenser_origin_permission_extended", bindings['block_index']) and ("origin" in bindings) and bindings['source'] != bindings['origin']:
+                if util.get_value_by_block_index("dispenser_origin_permission_extended", bindings['block_index']) and ("origin" in bindings) and bindings['source'] != bindings['origin']:
                     if bindings["status"] == 10:
                         operator_string = "closed by origin"
                     else:    
