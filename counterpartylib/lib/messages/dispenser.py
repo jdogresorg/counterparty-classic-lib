@@ -149,7 +149,7 @@ def validate (db, source, asset, give_quantity, escrow_quantity, mainchainrate, 
             status = STATUS_OPEN
         
         
-        if util.enabled("dispenser_origin_permission_extended", block_index) and status == STATUS_CLOSED and open_address and open_address != source:
+        if util.get_value_by_block_index("dispenser_origin_permission_extended", block_index) and status == STATUS_CLOSED and open_address and open_address != source:
             cursor.execute('''SELECT * FROM dispensers WHERE source = ? AND asset = ? AND status IN (0,11) AND origin=?''', (open_address, asset, source))
         else:
             query_address = open_address if status == STATUS_OPEN_EMPTY_ADDRESS else source
@@ -179,11 +179,11 @@ def validate (db, source, asset, give_quantity, escrow_quantity, mainchainrate, 
 
             if status == STATUS_OPEN_EMPTY_ADDRESS:
                 #If an address is trying to refill a dispenser in a different address and it's the creator
-                if not (util.enabled("dispenser_origin_permission_extended", block_index) and (len(open_dispensers) > 0) and (open_dispensers[0]["origin"] == source)):
+                if not (util.get_value_by_block_index("dispenser_origin_permission_extended", block_index) and (len(open_dispensers) > 0) and (open_dispensers[0]["origin"] == source)):
                     cursor.execute('''SELECT count(*) cnt FROM dispensers WHERE source = ? AND status = ? AND origin = ?''', (query_address,STATUS_CLOSED,source))
                     dispensers_from_same_origin = cursor.fetchall()
                     
-                    if not (util.enabled("dispenser_origin_permission_extended", block_index) and dispensers_from_same_origin[0]['cnt'] > 0):
+                    if not (util.get_value_by_block_index("dispenser_origin_permission_extended", block_index) and dispensers_from_same_origin[0]['cnt'] > 0):
                     #It means that the same origin has not opened other dispensers in this address
                         cursor.execute('''SELECT count(*) cnt FROM balances WHERE address = ?''', (query_address,))
                         existing_balances = cursor.fetchall()
@@ -191,7 +191,7 @@ def validate (db, source, asset, give_quantity, escrow_quantity, mainchainrate, 
                         if existing_balances[0]['cnt'] > 0:
                             problems.append('cannot open on another address if it has any balance history')
                         
-                        if util.enabled("dispenser_origin_permission_extended", block_index):
+                        if util.get_value_by_block_index("dispenser_origin_permission_extended", block_index):
                             address_oldest_transaction = backend.get_oldest_tx(query_address)
                             if ("block_index" in address_oldest_transaction) and (address_oldest_transaction["block_index"] > 0) and (block_index > address_oldest_transaction["block_index"]):
                                 problems.append('cannot open on another address if it has any confirmed bitcoin txs')
@@ -226,7 +226,7 @@ def compose (db, source, asset, give_quantity, escrow_quantity, mainchainrate, s
     destination = []
     data = message_type.pack(ID)
     data += struct.pack(FORMAT, assetid, give_quantity, escrow_quantity, mainchainrate, status)
-    if (status == STATUS_OPEN_EMPTY_ADDRESS and open_address) or (util.enabled("dispenser_origin_permission_extended") and status == STATUS_CLOSED and open_address and open_address != source):
+    if (status == STATUS_OPEN_EMPTY_ADDRESS and open_address) or (util.get_value_by_block_index("dispenser_origin_permission_extended") and status == STATUS_CLOSED and open_address and open_address != source):
         data += address.pack(open_address)
     if oracle_address is not None and util.enabled('oracle_dispensers'):
         oracle_fee = calculate_oracle_fee(db, escrow_quantity, give_quantity, mainchainrate, oracle_address, util.CURRENT_BLOCK_INDEX)
@@ -261,7 +261,7 @@ def parse (db, tx, message):
         oracle_address = None
         assetid, give_quantity, escrow_quantity, mainchainrate, dispenser_status = struct.unpack(FORMAT, message[0:LENGTH])
         read = LENGTH
-        if dispenser_status == STATUS_OPEN_EMPTY_ADDRESS or (util.enabled("dispenser_origin_permission_extended") and dispenser_status == STATUS_CLOSED and len(message) > read):
+        if dispenser_status == STATUS_OPEN_EMPTY_ADDRESS or (util.get_value_by_block_index("dispenser_origin_permission_extended") and dispenser_status == STATUS_CLOSED and len(message) > read):
             action_address = address.unpack(message[LENGTH:LENGTH+21])
             read = LENGTH + 21
         if len(message) > read:
@@ -335,14 +335,14 @@ def parse (db, tx, message):
                             'origin': tx['source']
                         }
                         
-                        if util.enabled("dispenser_origin_permission_extended"):
+                        if util.get_value_by_block_index("dispenser_origin_permission_extended"):
                             bindings["origin"] = tx["source"]
                         
                         sql = '''insert into dispensers (tx_index, tx_hash, block_index, source, asset, give_quantity, escrow_quantity, satoshirate, status, give_remaining, oracle_address, origin, last_status_tx_hash)
                             values(:tx_index, :tx_hash, :block_index, :source, :asset, :give_quantity, :escrow_quantity, :satoshirate, :status, :give_remaining, :oracle_address, :origin, NULL)'''
                         cursor.execute(sql, bindings)
                 elif len(existing) == 1 and existing[0]['satoshirate'] == mainchainrate and existing[0]['give_quantity'] == give_quantity:
-                    if tx["source"]==action_address or (util.enabled("dispenser_origin_permission_extended", tx['block_index']) and tx["source"] == existing[0]["origin"]):
+                    if tx["source"]==action_address or (util.get_value_by_block_index("dispenser_origin_permission_extended", tx['block_index']) and tx["source"] == existing[0]["origin"]):
                         if (oracle_address != None) and util.enabled('oracle_dispensers', tx['block_index']):
                             oracle_fee = calculate_oracle_fee(db, escrow_quantity, give_quantity, mainchainrate, oracle_address, tx['block_index']) 
                                
@@ -353,7 +353,7 @@ def parse (db, tx, message):
                         if status == 'valid':
                             # Refill the dispenser by the given amount
                             bindings = {
-                                'source': tx['source'] if not util.enabled("dispenser_origin_permission_extended", tx['block_index']) else action_address,
+                                'source': tx['source'] if not util.get_value_by_block_index("dispenser_origin_permission_extended", tx['block_index']) else action_address,
                                 'asset': asset,
                                 'prev_status': dispenser_status,
                                 'give_remaining': existing[0]['give_remaining'] + escrow_quantity,
@@ -388,7 +388,7 @@ def parse (db, tx, message):
                     status = 'can only have one open dispenser per asset per address'
             elif dispenser_status == STATUS_CLOSED:
                 close_delay = util.get_value_by_block_index("dispenser_close_delay", tx['block_index'])
-                close_from_another_address = util.enabled("dispenser_origin_permission_extended", tx['block_index']) and action_address and action_address != tx["source"]
+                close_from_another_address = util.get_value_by_block_index("dispenser_origin_permission_extended", tx['block_index']) and action_address and action_address != tx["source"]
                 query_dispenser = 'SELECT tx_index, give_remaining FROM dispensers WHERE source=:source AND asset=:asset AND status=:status'
                 query_bindings = {
                     'source': tx['source'],
