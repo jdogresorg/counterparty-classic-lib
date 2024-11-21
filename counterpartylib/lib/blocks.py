@@ -529,6 +529,9 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
                 return False
             pubkeyhash = pubkeyhashdict["pubkeyhash"]
             address_version = pubkeyhashdict["address_version"]
+            if not (pubkeyhash is bytes):
+                if type(pubkeyhash) is int:
+                    pubkeyhash = pubkeyhash.to_bytes(1, "big")
             
             pubkeyhash = binascii.hexlify(pubkeyhash).decode('utf-8')
             address = script.base58_check_encode(pubkeyhash, address_version)
