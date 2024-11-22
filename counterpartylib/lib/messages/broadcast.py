@@ -206,8 +206,9 @@ def parse (db, tx, message):
         sql = 'insert into broadcasts values(:tx_index, :tx_hash, :block_index, :source, :timestamp, :value, :fee_fraction_int, :text, :locked, :status)'
         cursor.execute(sql, bindings)
     else:
-        logger.warn("Not storing [broadcast] tx [%s]: %s" % (tx['tx_hash'], status))
-        logger.debug("Bindings: %s" % (json.dumps(bindings), ))
+        if tx["block_index"] != config.MEMPOOL_BLOCK_INDEX:
+            logger.warn("Not storing [broadcast] tx [%s]: %s" % (tx['tx_hash'], status))
+            logger.debug("Bindings: %s" % (json.dumps(bindings), ))
 
     # stop processing if broadcast is invalid for any reason
     if util.enabled('broadcast_invalid_check') and status != 'valid':

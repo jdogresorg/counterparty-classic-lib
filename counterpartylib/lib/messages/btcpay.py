@@ -188,8 +188,9 @@ def parse (db, tx, message):
         sql = 'insert into btcpays values(:tx_index, :tx_hash, :block_index, :source, :destination, :btc_amount, :order_match_id, :status)'
         cursor.execute(sql, bindings)
     else:
-        logger.warn("Not storing [btcpay] tx [%s]: %s" % (tx['tx_hash'], status))
-        logger.debug("Bindings: %s" % (json.dumps(bindings), ))
+        if tx["block_index"] != config.MEMPOOL_BLOCK_INDEX:
+            logger.warn("Not storing [btcpay] tx [%s]: %s" % (tx['tx_hash'], status))
+            logger.debug("Bindings: %s" % (json.dumps(bindings), ))
 
 
     cursor.close()

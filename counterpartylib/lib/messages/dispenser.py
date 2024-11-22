@@ -438,7 +438,7 @@ def parse (db, tx, message):
             else:
                 status = 'invalid: status must be one of OPEN or CLOSE'
 
-    if status != 'valid':
+    if status != 'valid' and tx["block_index"] != config.MEMPOOL_BLOCK_INDEX:
         logger.warn("Not storing [dispenser] tx [%s]: %s" % (tx['tx_hash'], status))
 
     cursor.close()
