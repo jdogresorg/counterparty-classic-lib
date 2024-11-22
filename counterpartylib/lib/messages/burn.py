@@ -146,8 +146,9 @@ def parse (db, tx, MAINNET_BURNS, message=None):
         sql = 'insert into burns values(:tx_index, :tx_hash, :block_index, :source, :burned, :earned, :status)'
         burn_parse_cursor.execute(sql, bindings)
     else:
-        logger.warn("Not storing [burn] tx [%s]: %s" % (tx['tx_hash'], status))
-        logger.debug("Bindings: %s" % (json.dumps(bindings), ))
+        if tx["block_index"] != config.MEMPOOL_BLOCK_INDEX:
+            logger.warn("Not storing [burn] tx [%s]: %s" % (tx['tx_hash'], status))
+            logger.debug("Bindings: %s" % (json.dumps(bindings), ))
 
     burn_parse_cursor.close()
 

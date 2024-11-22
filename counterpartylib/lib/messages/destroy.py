@@ -142,8 +142,9 @@ def parse (db, tx, message):
         cursor = db.cursor()
         cursor.execute(sql, bindings)
     else:
-        logger.warn("Not storing [destroy] tx [%s]: %s" % (tx['tx_hash'], status))
-        logger.debug("Bindings: %s" % (json.dumps(bindings), ))
+        if tx["block_index"] != config.MEMPOOL_BLOCK_INDEX:
+            logger.warn("Not storing [destroy] tx [%s]: %s" % (tx['tx_hash'], status))
+            logger.debug("Bindings: %s" % (json.dumps(bindings), ))
 
 
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
