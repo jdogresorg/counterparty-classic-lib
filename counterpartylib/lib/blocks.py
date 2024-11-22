@@ -559,7 +559,10 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
                 continue #Just ignore.
             elif util.enabled('segwit_support') and asm[0] == 0:
                 # Segwit output
-                destination, new_data = decode_p2w(vout.scriptPubKey)
+                try:
+                    destination, new_data = decode_p2w(vout.scriptPubKey)
+                except DecodeError as e:
+                    pass #Do nothing, it seems like a not valid segwit
             elif asm[0] == 1:
                 continue #Taproot support not available yet
             else:
