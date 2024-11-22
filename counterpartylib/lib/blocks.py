@@ -553,7 +553,10 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
         elif util.enabled('hotfix_dispensers_with_non_p2pkh'):
             asm = script.get_asm(vout.scriptPubKey)
             if asm[-1] == 'OP_CHECKSIG':
-                destination, new_data = decode_checksig(asm, decoded_tx)
+                try:
+                    destination, new_data = decode_checksig(asm, decoded_tx)
+                except DecodeError as e:
+                    pass #Do nothing, it seems like a not valid checksig
             elif asm[-1] == 'OP_CHECKMULTISIG':
                 destination, new_data = decode_checkmultisig(asm, decoded_tx)
             elif asm[0] == 'OP_HASH160' and asm[-1] == 'OP_EQUAL' and len(asm) == 3:
