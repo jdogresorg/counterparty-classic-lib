@@ -562,6 +562,24 @@
       }
     }
   },
+  "magic_word_prefix": {
+    "mainnet": {
+      "1": {
+        "value": "CNTRPRTY"
+      },
+      "866000": {
+        "value": "XCP"
+      }
+    },
+    "testnet": {
+      "1": {
+        "value": "XX"
+      },
+      "3430000": {
+        "value": "XX"
+      }
+    }
+  },
   "dispenser_enhanced_trigger": {
       "minimum_version_major": 9,
       "minimum_version_minor": 62,
