@@ -1,4 +1,9 @@
 ## Library Versions ##
+* v9.62.0 (2024-11-25)
+    * replay protection to change prefix to "XCP" at block #873,000 on mainnet
+    * update to trigger dispense on any transaction outputs with BTC
+    * update to throw error if no XCP balance is available for sweep fee
+    * prevent warning flooding when parsing transactions from mempool
 * v9.61.3 (2024-04-09)
     * Add missing sanity check in address unpacking for dispensers that causes a complete network crash
 * v9.61.2 (2024-02-28)
