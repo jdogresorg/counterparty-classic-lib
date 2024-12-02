@@ -1166,28 +1166,29 @@ def list_tx(db, block_hash, block_index, block_time, tx_hash, tx_index, tx_hex=N
     outs = []
     first_one = True #This is for backward compatibility with unique dispensers
     if ((not source) or util.enabled("dispenser_enhanced_trigger", block_index)) and decoded_tx and util.enabled('dispensers', block_index):
-        outputs = decoded_tx[1]
-        out_index = 0
-        for out in outputs:
-            if out[0] != decoded_tx[0][0] and dispenser.is_dispensable(db, out[0], out[1]):
-                
-                if not source:
-                    source = decoded_tx[0][0]
-                if destination is None:
-                    destination = out[0]
-                if btc_amount is None:  
-                    btc_amount = out[1]
-                if fee is None: 
-                    fee = 0
-                data = struct.pack(config.SHORT_TXTYPE_FORMAT, dispenser.DISPENSE_ID)
-                data += b'\x00'
-                
-                if util.enabled("multiple_dispenses"):
-                    outs.append({"destination":out[0], "btc_amount":out[1], "out_index":out_index})
-                else:
-                    break # Prevent inspection of further dispenses (only first one is valid)
+        if decoded_tx[0]:
+            outputs = decoded_tx[1]
+            out_index = 0
+            for out in outputs:
+                if out[0] != decoded_tx[0][0] and dispenser.is_dispensable(db, out[0], out[1]):
                     
-            out_index = out_index + 1
+                    if not source:
+                        source = decoded_tx[0][0]
+                    if destination is None:
+                        destination = out[0]
+                    if btc_amount is None:  
+                        btc_amount = out[1]
+                    if fee is None: 
+                        fee = 0
+                    data = struct.pack(config.SHORT_TXTYPE_FORMAT, dispenser.DISPENSE_ID)
+                    data += b'\x00'
+                    
+                    if util.enabled("multiple_dispenses"):
+                        outs.append({"destination":out[0], "btc_amount":out[1], "out_index":out_index})
+                    else:
+                        break # Prevent inspection of further dispenses (only first one is valid)
+                        
+                out_index = out_index + 1
 
     # For mempool
     if block_hash == None:
