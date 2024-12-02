@@ -613,6 +613,8 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
                 # Segwit output
                 # Get the full transaction data for this input transaction.
                 new_source, new_data = decode_p2w(vout.scriptPubKey)
+            elif asm[0] == 1:
+                continue #Taproot support not available yet 
             else:
                 raise DecodeError('unrecognised source type')
 
