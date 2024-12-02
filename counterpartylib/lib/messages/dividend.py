@@ -187,6 +187,8 @@ def parse (db, tx, message):
 
         dividend_total, outputs, problems, fee = validate(db, tx['source'], quantity_per_unit, asset, dividend_asset, block_index=tx['block_index'])
         if problems: status = 'invalid: ' + '; '.join(problems)
+    else:
+        fee = 0
 
     if status == 'valid':
         # Debit.
