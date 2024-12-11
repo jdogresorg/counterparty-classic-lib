@@ -84,6 +84,12 @@ JSON_RPC_ERROR_API_COMPOSE = -32001 #code to use for error composing transaction
 current_api_status_code = None #is updated by the APIStatusPoller
 current_api_status_response_json = None #is updated by the APIStatusPoller
 
+
+#This will be used to detect dispenser closure delay with erroneous block_index
+ISSUE_DISPENSER_CLOSE_DELAY = 5
+ISSUE_DISPENSER_CLOSE_DELAY_BLOCK_INDEX = 819300
+DISPENSER_CLOSE_DELAY_BLOCK_INDEX_FIX = 867426
+
 class APIError(Exception):
     pass
 
@@ -733,6 +739,13 @@ class APIServer(threading.Thread):
                 % (block_indexes_str,))
             blocks = cursor.fetchall()
 
+            for block in blocks:
+                if (block['block_index'] >= ISSUE_DISPENSER_CLOSE_DELAY_BLOCK_INDEX+ISSUE_DISPENSER_CLOSE_DELAY):
+                    block_before = block['block_index'] - ISSUE_DISPENSER_CLOSE_DELAY
+                    
+                    if block_before not in block_indexes:
+                        block_indexes_str = block_indexes_str + "," + str(block_before)
+
             cursor.execute('SELECT * FROM messages WHERE block_index IN (%s) ORDER BY message_index ASC'
                 % (block_indexes_str,))
             messages = collections.deque(cursor.fetchall())
@@ -742,11 +755,46 @@ class APIServer(threading.Thread):
                 while len(messages) and messages[0]['message_index'] < min_message_index:
                     messages.popleft()
 
+            last_message_index = -1
             # Packages messages into their appropriate block in the data structure to be returned
             for block in blocks:
+                first_found = False
                 block['_messages'] = []
-                while len(messages) and messages[0]['block_index'] == block['block_index']:
-                    block['_messages'].append(messages.popleft())
+                msg_index = 0
+                next_block_index = block['block_index']
+
+                while msg_index < len(messages):
+                    is_a_dispenser_closure = (
+                        (messages[msg_index]['block_index'] < DISPENSER_CLOSE_DELAY_BLOCK_INDEX_FIX)
+                        and (messages[msg_index]["command"] == "update") 
+                        and (messages[msg_index]['category'] == "dispensers") 
+                        and ('"status": 10' in messages[msg_index]['bindings']) 
+                        and ("closing_reason" not in messages[msg_index]['bindings'])
+                    )   
+                
+                    if (
+                        (
+                            (messages[msg_index]['block_index'] == next_block_index)
+                            and not is_a_dispenser_closure                          
+                        ) or (
+                            (messages[msg_index]['block_index']+ISSUE_DISPENSER_CLOSE_DELAY == next_block_index)
+                            and is_a_dispenser_closure
+                        )
+                    ):
+                        if not first_found:
+                            first_found = True
+                        elif last_message_index + 1 != messages[msg_index]["message_index"]:
+                            break
+                            
+                        last_message_index = messages[msg_index]["message_index"]
+                        block['_messages'].append(messages[msg_index])
+                        msg_index = msg_index + 1
+                    else:
+                        if first_found:
+                            break
+                            
+                        msg_index = msg_index + 1
+                            
             #NOTE: if len(messages), then we're only returning the messages for the first set of blocks before the reorg
 
             cursor.close()
