@@ -70,7 +70,7 @@ def unpack(db, message):
     return asset, quantity, tag
 
 
-def validate (db, source, destination, asset, quantity):
+def validate (db, source, destination, asset, quantity, tag):
 
     problems = []
 
@@ -102,6 +102,11 @@ def validate (db, source, destination, asset, quantity):
     if ('asset invalid' not in problems) and (util.get_balance(db, source, asset) < quantity):
         problems.append('balance insufficient')
 
+    try: 
+        tag.decode("utf-8")
+    except UnicodeDecodeError:
+        problems.append("cannot decode tag")
+
     if len(problems) > 0:
         raise ValidateError(",".join(problems))
 
@@ -122,7 +127,7 @@ def parse (db, tx, message):
 
     try:
         asset, quantity, tag = unpack(db, message)
-        validate(db, tx['source'], tx['destination'], asset, quantity)
+        validate(db, tx['source'], tx['destination'], asset, quantity, tag)
         util.debit(db, tx['source'], asset, quantity, 'destroy', tx['tx_hash'])
 
     except UnpackError as e:
@@ -148,6 +153,10 @@ def parse (db, tx, message):
     else:
         if tx["block_index"] != config.MEMPOOL_BLOCK_INDEX:
             logger.warn("Not storing [destroy] tx [%s]: %s" % (tx['tx_hash'], status))
+            
+            if "cannot decode tag" in status:
+                bindings["tag"] = ""
+            
             logger.debug("Bindings: %s" % (json.dumps(bindings), ))
 
 
