@@ -16,6 +16,7 @@ from bitcoin.core.script import CScript
 from counterpartylib.lib import config
 from counterpartylib.lib import script
 from counterpartylib.lib import exceptions
+from counterpartylib.lib import util
 
 def maximum_data_chunk_size(pubkeylength):
     if pubkeylength >= 0:
