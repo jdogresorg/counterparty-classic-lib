@@ -70,36 +70,45 @@ def unpack(db, message):
     return asset, quantity, tag
 
 
-def validate (db, source, destination, asset, quantity):
+def validate (db, source, destination, asset, quantity, tag):
+
+    problems = []
 
     try:
         util.get_asset_id(db, asset, util.CURRENT_BLOCK_INDEX)
     except AssetError:
-        raise ValidateError('asset invalid')
+        problems.append('asset invalid')
 
     try:
         script.validate(source)
     except AddressError:
-        raise ValidateError('source address invalid')
-
+        problems.append('source address invalid')
+        
     if destination:
-        raise ValidateError('destination exists')
+        problems.append('destination exists')
 
     if asset == config.BTC:
-        raise ValidateError('cannot destroy {}'.format(config.BTC))
+        problems.append('cannot destroy {}'.format(config.BTC))
 
     if type(quantity) != int:
-        raise ValidateError('quantity not integer')
+        problems.append('quantity not integer')
 
     if quantity > config.MAX_INT:
-        raise ValidateError('integer overflow, quantity too large')
+        problems.append('integer overflow, quantity too large')
 
     if quantity < 0:
-        raise ValidateError('quantity negative')
+        problems.append('quantity negative')
 
-    if util.get_balance(db, source, asset) < quantity:
-        raise BalanceError('balance insufficient')
+    if ('asset invalid' not in problems) and (util.get_balance(db, source, asset) < quantity):
+        problems.append('balance insufficient')
 
+    try: 
+        tag.decode("utf-8")
+    except UnicodeDecodeError:
+        problems.append("cannot decode tag")
+
+    if len(problems) > 0:
+        raise ValidateError(",".join(problems))
 
 def compose (db, source, asset, quantity, tag):
     # resolve subassets
@@ -118,7 +127,7 @@ def parse (db, tx, message):
 
     try:
         asset, quantity, tag = unpack(db, message)
-        validate(db, tx['source'], tx['destination'], asset, quantity)
+        validate(db, tx['source'], tx['destination'], asset, quantity, tag)
         util.debit(db, tx['source'], asset, quantity, 'destroy', tx['tx_hash'])
 
     except UnpackError as e:
@@ -144,6 +153,10 @@ def parse (db, tx, message):
     else:
         if tx["block_index"] != config.MEMPOOL_BLOCK_INDEX:
             logger.warn("Not storing [destroy] tx [%s]: %s" % (tx['tx_hash'], status))
+            
+            if "cannot decode tag" in status:
+                bindings["tag"] = ""
+            
             logger.debug("Bindings: %s" % (json.dumps(bindings), ))
 
 
