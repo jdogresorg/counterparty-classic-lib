@@ -584,9 +584,9 @@
     },
     "testnet": {
       "1": {
-        "value": "XX"
+        "value": "CNTRPRTY"
       },
-      "3430000": {
+      "1400000": {
         "value": "XX"
       }
     }
