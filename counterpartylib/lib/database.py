@@ -84,7 +84,8 @@ def get_connection(read_only=True, foreign_keys=True, integrity_check=True):
     else:
         db = apsw.Connection(config.DATABASE)
     cursor = db.cursor()
-
+    cursor.execute('''PRAGMA busy_timeout = 100''')
+    
     # For integrity, security.
     if foreign_keys and not read_only:
         logger.info('Checking database foreign keys...')
