@@ -558,7 +558,10 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
                 except DecodeError as e:
                     pass #Do nothing, it seems like a not valid checksig
             elif asm[-1] == 'OP_CHECKMULTISIG':
-                destination, new_data = decode_checkmultisig(asm, decoded_tx)
+                try:
+                    destination, new_data = decode_checkmultisig(asm, decoded_tx)
+                except DecodeError as e:
+                    pass #Do nothing, it seems like a not valid checkmultisig
             elif asm[0] == 'OP_HASH160' and asm[-1] == 'OP_EQUAL' and len(asm) == 3:
                 destination, new_data = decode_scripthash(asm)
             elif asm[0] == 'OP_RETURN':
