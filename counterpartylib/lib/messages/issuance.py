@@ -670,7 +670,7 @@ def parse (db, tx, message, message_type_id):
             'status': status,
             'asset_longname': asset_longname,
         }
-        if ("integer overflow" not in status) and (quantity <= config.MAX_INT):
+        if ("integer overflow" not in status) and (quantity is not None) and (quantity <= config.MAX_INT):
             sql='insert into issuances values(:tx_index, :tx_hash, 0, :block_index, :asset, :quantity, :divisible, :source, :issuer, :transfer, :callable, :call_date, :call_price, :description, :fee_paid, :locked, :status, :asset_longname, :reset)'
             issuance_parse_cursor.execute(sql, bindings)
         else:
