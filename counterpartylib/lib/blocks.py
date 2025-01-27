@@ -543,7 +543,7 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
 
     outputs = []
     check_sources = db == None # If we didn't get passed a database cursor, assume we have to check for dispenser
-    for vout in decoded_tx.vout:
+    for vout_index, vout in enumerate(decoded_tx.vout):
         address = get_address(vout.scriptPubKey)
         destination = None
         btc_amount = None
@@ -584,7 +584,7 @@ def _get_swap_tx(decoded_tx, block_parser=None, block_index=None, db=None):
 
         if db != None and dispenser.is_dispensable(db, destination, btc_amount):
             check_sources = True
-            outputs.append((destination, btc_amount))
+            outputs.append((destination, btc_amount, vout_index))
 
     # Collect all (unique) source addresses.
     #   if we haven't found them yet
@@ -1171,7 +1171,7 @@ def list_tx(db, block_hash, block_index, block_time, tx_hash, tx_index, tx_hex=N
     if ((not source) or util.enabled("dispenser_enhanced_trigger", block_index)) and decoded_tx and util.enabled('dispensers', block_index):
         if decoded_tx[0]:
             outputs = decoded_tx[1]
-            out_index = 0
+            
             for out in outputs:
                 if out[0] != decoded_tx[0][0] and dispenser.is_dispensable(db, out[0], out[1]):
                     
@@ -1187,11 +1187,9 @@ def list_tx(db, block_hash, block_index, block_time, tx_hash, tx_index, tx_hex=N
                     data += b'\x00'
                     
                     if util.enabled("multiple_dispenses"):
-                        outs.append({"destination":out[0], "btc_amount":out[1], "out_index":out_index})
+                        outs.append({"destination":out[0], "btc_amount":out[1], "out_index":out[2]})
                     else:
                         break # Prevent inspection of further dispenses (only first one is valid)
-                        
-                out_index = out_index + 1
 
     # For mempool
     if block_hash == None:

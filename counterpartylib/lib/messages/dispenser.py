@@ -88,6 +88,9 @@ def initialise(db):
     columns = [column['name'] for column in cursor.execute('''PRAGMA table_info(dispenses)''')]
     if 'dispenser_tx_hash' not in columns:
         cursor.execute('ALTER TABLE dispenses ADD COLUMN dispenser_tx_hash TEXT')
+    #this column will be used to link the dispense with a out_index of the tx
+    if 'out_index' not in columns:
+        cursor.execute('ALTER TABLE dispenses ADD COLUMN out_index INTEGER') 
     
     columns = [column['name'] for column in cursor.execute('''PRAGMA table_info(dispensers)''')]
     if 'oracle_address' not in columns:
@@ -110,7 +113,6 @@ def initialise(db):
                               AND dis.asset = deb.asset 
                               AND dis.tx_index = (SELECT max(dis2.tx_index) FROM dispensers dis2 WHERE dis2.source = deb.address AND dis2.asset = deb.asset AND dis2.block_index <= deb.block_index) 
                           WHERE deb.action = 'refill dispenser' AND dis.source IS NOT NULL''');
-        
         
 def validate (db, source, asset, give_quantity, escrow_quantity, mainchainrate, status, open_address, block_index, oracle_address):
     problems = []
@@ -563,10 +565,11 @@ def dispense(db, tx):
                     'destination': next_out['source'],
                     'asset': dispenser['asset'],
                     'dispense_quantity': actually_given,
-                    'dispenser_tx_hash': dispenser['tx_hash']
+                    'dispenser_tx_hash': dispenser['tx_hash'],
+                    'out_index': next_out['out_index'] if util.enabled("multiple_dispenses") else None
                 }
-                sql = 'INSERT INTO dispenses(tx_index, dispense_index, tx_hash, block_index, source, destination, asset, dispense_quantity, dispenser_tx_hash) \
-                        VALUES(:tx_index, :dispense_index, :tx_hash, :block_index, :source, :destination, :asset, :dispense_quantity, :dispenser_tx_hash);'
+                sql = 'INSERT INTO dispenses(tx_index, dispense_index, tx_hash, block_index, source, destination, asset, dispense_quantity, dispenser_tx_hash, out_index) \
+                        VALUES(:tx_index, :dispense_index, :tx_hash, :block_index, :source, :destination, :asset, :dispense_quantity, :dispenser_tx_hash, :out_index);'
                 cursor.execute(sql, bindings)
                 dispense_index += 1
 
